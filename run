@@ -1,0 +1,30 @@
+#!/bin/sh
+
+stringContain() { [ -z "${2##*$1*}" ] && [ -z "$1" -o -n "$2" ]; }
+
+convertPath() {
+	if stringContain / $1 && ! stringContain :// $1 ; then
+		path=$(readlink -f $1)
+		if stringContain /mnt/c $path; then
+			echo $path | sed 's/\/mnt\/c\//c:\//' | tr '/' '\\'
+		else
+			echo '!LXSS!'$path
+		fi
+	else
+		echo $1
+	fi
+}
+
+mainarg=$(convertPath $1)
+mainpwd=$(convertPath `pwd`)
+shift
+args=""
+for i in "$@"
+do
+	arg=$(convertPath $1)
+	args="${args}\"$arg\" "
+done
+
+echo ${mainarg}@${mainpwd}@${args} > /dev/tcp/127.0.0.1/712
+#echo ${mainarg}@${mainpwd}@${args} 
+
